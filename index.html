@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>AI e Customer Experience — Tesi di Laurea</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@property --hue{ syntax:'<number>'; inherits:true; initial-value:215; }
+
+:root{
+  --hue: 215;
+  --bg: #08090d;
+  --bg-2: #0c0e15;
+  --ink: #eef1f7;
+  --ink-dim: #97a0b3;
+  --ink-dim2: #6b7384;
+  --line: rgba(255,255,255,.09);
+  --accent: hsl(var(--hue) 85% 64%);
+  --accent-soft: hsl(var(--hue) 85% 64% / .14);
+  --accent-line: hsl(var(--hue) 85% 64% / .35);
+  --gold: #d8b06a;
+  --font-serif: 'Iowan Old Style','Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+  transition: --hue .7s cubic-bezier(.22,.61,.36,1);
+}
+
+*{box-sizing:border-box;}
+html,body{
+  margin:0; padding:0; height:100%; width:100%;
+  background:var(--bg); color:var(--ink);
+  font-family:var(--font-sans);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- Ambient background ---------- */
+.ambient{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;}
+.ambient::before, .ambient::after{
+  content:''; position:absolute; border-radius:50%;
+  filter:blur(90px); opacity:.5; mix-blend-mode:screen;
+  transition: background .7s ease;
+}
+.ambient::before{
+  width:48vw; height:48vw; top:-14vw; right:-10vw;
+  background: radial-gradient(circle at 30% 30%, hsl(var(--hue) 90% 60%), transparent 70%);
+  animation: drift1 26s ease-in-out infinite;
+}
+.ambient::after{
+  width:38vw; height:38vw; bottom:-12vw; left:-8vw;
+  background: radial-gradient(circle at 60% 60%, hsl(calc(var(--hue) + 40) 85% 55%), transparent 70%);
+  animation: drift2 30s ease-in-out infinite;
+}
+@keyframes drift1{ 0%,100%{transform:translate(0,0)} 50%{transform:translate(-3vw,3vw)} }
+@keyframes drift2{ 0%,100%{transform:translate(0,0)} 50%{transform:translate(3vw,-2vw)} }
+.grain{
+  position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.05;
+  background-image: radial-gradient(rgba(255,255,255,.7) 0.6px, transparent 0.6px);
+  background-size: 22px 22px;
+}
+
+/* ---------- Deck ---------- */
+#deck{ position:fixed; inset:0; z-index:2; }
+.slide{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  padding: 7vh 8vw 11vh 8vw;
+  transform: translateX(100%) scale(.97);
+  transition: transform .68s cubic-bezier(.22,.61,.36,1);
+  pointer-events:none;
+}
+.slide.active{ transform:translateX(0) scale(1); pointer-events:auto; z-index:3; }
+.slide.prev{ transform:translateX(-100%) scale(.97); z-index:1; }
+.slide.next{ transform:translateX(100%) scale(.97); z-index:1; }
+.slide.noanim{ transition:none; }
+
+.slide-inner{ width:100%; max-width:1180px; }
+
+/* ---------- Typography components ---------- */
+.eyebrow{
+  display:inline-flex; align-items:center; gap:.5em;
+  font-size: clamp(.68rem, .85vw, .82rem);
+  letter-spacing:.16em; text-transform:uppercase; font-weight:600;
+  color:var(--accent); margin:0 0 1.4rem 0;
+}
+.eyebrow::before{ content:''; width:1.6em; height:1.5px; background:var(--accent); display:inline-block; }
+
+h1.h1{
+  font-family:var(--font-serif); font-weight:600;
+  font-size:clamp(2.1rem, 3.6vw, 3.3rem);
+  line-height:1.08; margin:0 0 1.1rem 0; letter-spacing:-.01em;
+}
+.lead{
+  font-size:clamp(1.02rem, 1.4vw, 1.28rem);
+  color:var(--ink-dim); line-height:1.55; max-width:46em; margin:0 0 1.6rem 0;
+}
+p.body{ font-size:clamp(.96rem,1.15vw,1.08rem); color:var(--ink); line-height:1.6; }
+
+ul.bullets{ list-style:none; margin:0; padding:0; }
+ul.bullets li{
+  position:relative; padding-left:1.5em; margin-bottom:.85em;
+  font-size:clamp(.96rem,1.2vw,1.12rem); color:var(--ink); line-height:1.5;
+}
+ul.bullets li::before{
+  content:''; position:absolute; left:0; top:.55em; width:7px; height:7px;
+  border-radius:50%; background:var(--accent);
+}
+ul.bullets b, ul.bullets strong{ color:var(--ink); font-weight:600; }
+ul.bullets .dim{ color:var(--ink-dim); }
+
+code, .code{
+  font-family:var(--font-mono); font-size:.92em;
+  background:var(--accent-soft); color:var(--accent);
+  padding:.12em .42em; border-radius:5px; white-space:nowrap;
+}
+
+.quote{
+  border-left:2px solid var(--gold); padding:.3em 0 .3em 1.3em; margin:1.4rem 0;
+  font-family:var(--font-serif); font-style:italic; font-size:clamp(1.05rem,1.5vw,1.32rem);
+  color:#f1e4c8; line-height:1.5; max-width:42em;
+}
+
+/* ---------- Layout helpers ---------- */
+.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:3.2rem; align-items:start; }
+.grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.4rem; }
+
+.card{
+  border:1px solid var(--line); border-radius:14px; padding:1.5rem 1.6rem;
+  background:linear-gradient(160deg, rgba(255,255,255,.035), rgba(255,255,255,0));
+}
+.card h3{
+  font-family:var(--font-sans); font-size:.78rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 .65rem 0; font-weight:700;
+}
+.card p{ font-size:.98rem; color:var(--ink-dim); line-height:1.5; margin:0; }
+
+.kpi-row{ display:flex; gap:.9rem; flex-wrap:wrap; margin-top:1.2rem; }
+.kpi-chip{
+  border:1px solid var(--accent-line); background:var(--accent-soft);
+  border-radius:999px; padding:.5em 1.1em; font-size:.88rem; color:var(--ink);
+  display:flex; align-items:center; gap:.5em;
+}
+.kpi-chip b{ color:var(--accent); font-size:1.05em; }
+
+.flow{ display:flex; align-items:stretch; gap:.6rem; flex-wrap:wrap; margin-top:.4rem; }
+.flow-step{
+  flex:1 1 0; min-width:150px; border:1px solid var(--line); border-radius:12px;
+  padding:1.1rem 1.1rem; background:rgba(255,255,255,.03);
+}
+.flow-step .num{ font-family:var(--font-serif); color:var(--gold); font-size:1.15rem; margin-bottom:.4rem; display:block;}
+.flow-step .t{ font-weight:600; font-size:.96rem; margin-bottom:.3rem; }
+.flow-step .d{ font-size:.85rem; color:var(--ink-dim); line-height:1.45; }
+.flow-arrow{ display:flex; align-items:center; color:var(--ink-dim2); font-size:1.4rem; padding:0 .1rem;}
+
+.stepper{ display:flex; flex-direction:column; gap:.9rem; margin-top:1rem; }
+.step-row{ display:flex; gap:1.1rem; align-items:flex-start; border:1px solid var(--line); border-radius:12px; padding:1rem 1.2rem; background:rgba(255,255,255,.025);}
+.step-row .badge{
+  flex:0 0 auto; width:2.1rem; height:2.1rem; border-radius:50%; border:1px solid var(--accent-line);
+  display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); color:var(--accent); font-size:1rem;
+}
+.step-row .stext .t{ font-weight:700; font-size:1rem; margin-bottom:.15rem;}
+.step-row .stext .d{ font-size:.88rem; color:var(--ink-dim); }
+
+.stat-wrap{ display:flex; align-items:baseline; gap:1.4rem; flex-wrap:wrap; margin:1rem 0; }
+.stat-big{ font-family:var(--font-serif); font-weight:700; color:var(--accent); font-size:clamp(4rem,9vw,7rem); line-height:1; }
+.stat-label{ max-width:24em; font-size:1.02rem; color:var(--ink-dim); line-height:1.5; }
+.source{ font-size:.78rem; color:var(--ink-dim2); margin-top:.6rem; letter-spacing:.02em;}
+
+table.cmp{ width:100%; border-collapse:collapse; margin-top:.8rem;}
+table.cmp th, table.cmp td{ text-align:left; padding:.8rem 1rem; border-bottom:1px solid var(--line); font-size:.95rem;}
+table.cmp th{ color:var(--accent); font-size:.74rem; text-transform:uppercase; letter-spacing:.08em; font-weight:700;}
+table.cmp td.case{ font-weight:700; }
+table.cmp tr:last-child td{ border-bottom:none; }
+
+/* ---------- Divider slides ---------- */
+.slide.divider .slide-inner{ text-align:center; max-width:900px; margin:0 auto;}
+.divider-num{
+  font-family:var(--font-serif); font-size:clamp(5rem,13vw,9rem); color:var(--accent-soft);
+  -webkit-text-stroke:1.5px var(--accent-line); color:transparent; font-weight:700; line-height:1; margin-bottom:.2rem;
+}
+.divider h1.h1{ font-size:clamp(2.4rem,5vw,4.2rem); text-align:center; margin:0 auto .9rem;}
+.divider .lead{ text-align:center; margin:0 auto; }
+
+/* ---------- Title slide ---------- */
+.slide.title .slide-inner{ text-align:left; }
+.title-logo{ height:46px; opacity:.85; filter:invert(1) brightness(1.6); margin-bottom:2.4rem; }
+.title h1.h1{ font-size:clamp(2.8rem,6vw,5.2rem); }
+.title-meta{ display:flex; gap:2.4rem; flex-wrap:wrap; margin-top:2.4rem; padding-top:1.4rem; border-top:1px solid var(--line); }
+.title-meta div .k{ font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim2); margin-bottom:.3rem;}
+.title-meta div .v{ font-size:1rem; color:var(--ink); font-weight:600;}
+
+/* ---------- Closing slide ---------- */
+.slide.closing .slide-inner{ text-align:center; }
+.closing h1.h1{ font-size:clamp(2.6rem,6vw,5rem); text-align:center; margin:0 auto .6rem;}
+
+/* ---------- Chrome (progress / nav) ---------- */
+.chrome{ position:fixed; left:0; right:0; bottom:0; z-index:10; padding:0 0 0 0; }
+.progress{ height:2px; width:100%; background:var(--line); }
+.progress-fill{ height:100%; background:linear-gradient(90deg, var(--accent), var(--gold)); width:4%; transition:width .5s cubic-bezier(.22,.61,.36,1), background .7s; }
+.chrome-row{ display:flex; justify-content:space-between; align-items:center; padding:1.1rem 2.4rem; }
+.section-tag{ font-size:.78rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); font-weight:600; transition:opacity .2s; }
+.section-tag b{ color:var(--accent); font-weight:700; }
+.slide-num{ font-family:var(--font-mono); font-size:.78rem; color:var(--ink-dim2); letter-spacing:.03em; }
+.tag-pulse{ animation:pulse .35s ease; }
+@keyframes pulse{ 0%{opacity:.2; transform:translateY(2px)} 100%{opacity:1; transform:translateY(0)} }
+
+.navbtn{
+  position:fixed; top:50%; transform:translateY(-50%); z-index:11;
+  width:44px; height:44px; border-radius:50%; border:1px solid var(--line);
+  background:rgba(255,255,255,.03); color:var(--ink-dim); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:1.1rem; transition:.2s; backdrop-filter:blur(6px);
+}
+.navbtn:hover{ color:var(--ink); border-color:var(--accent-line); background:var(--accent-soft); }
+#prevBtn{ left:1.6rem; } #nextBtn{ right:1.6rem; }
+
+.hint{
+  position:fixed; bottom:4.6rem; left:0; right:0; text-align:center; z-index:9;
+  font-size:.8rem; color:var(--ink-dim2); letter-spacing:.03em; transition:opacity .6s;
+}
+.hint.hide{ opacity:0; }
+
+#ovBtn{
+  position:fixed; top:1.6rem; right:1.6rem; z-index:11; width:38px; height:38px; border-radius:9px;
+  border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--ink-dim);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1rem;
+}
+#ovBtn:hover{ color:var(--ink); border-color:var(--accent-line); }
+
+/* ---------- Overview overlay ---------- */
+#overview{
+  position:fixed; inset:0; z-index:20; background:rgba(6,7,11,.92); backdrop-filter:blur(10px);
+  display:none; flex-direction:column; align-items:center; padding:5vh 4vw; overflow-y:auto;
+}
+#overview.open{ display:flex; }
+#overview h2{ font-family:var(--font-serif); font-size:1.6rem; margin:0 0 1.6rem 0; color:var(--ink); }
+.ov-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:.9rem; max-width:1100px; width:100%; }
+.ov-item{
+  border:1px solid var(--line); border-radius:10px; padding:.9rem 1rem; cursor:pointer; text-align:left;
+  background:rgba(255,255,255,.025); transition:.15s;
+}
+.ov-item:hover{ border-color:var(--accent-line); background:var(--accent-soft); }
+.ov-item .n{ font-family:var(--font-mono); font-size:.72rem; color:var(--accent); }
+.ov-item .t{ font-size:.85rem; color:var(--ink); margin-top:.25rem; line-height:1.3; }
+
+@media (max-width: 900px){
+  .grid-2{ grid-template-columns:1fr; gap:1.4rem; }
+  .grid-3{ grid-template-columns:1fr; }
+  .ov-grid{ grid-template-columns:repeat(2,1fr); }
+  .flow{ flex-direction:column; }
+  .flow-arrow{ transform:rotate(90deg); justify-content:center; }
+}
+</style>
+</head>
+<body>
+
+<div class="ambient"></div>
+<div class="grain"></div>
+
+<div id="deck">
+
+  <!-- 1 -->
+  <section class="slide title" data-hue="215" data-section="Apertura">
+    <div class="slide-inner">
+      <img class="title-logo" src="assets/unife.png" alt="UniFe">
+      <div class="eyebrow">Tesi di Laurea Triennale · Tecnologie per l'Industria Digitale</div>
+      <h1 class="h1">AI e Customer&nbsp;Experience</h1>
+      <p class="lead">Context Engineering, RAG e Function Calling per l'integrazione di agenti conversazionali in sistemi informativi enterprise.</p>
+      <div class="title-meta">
+        <div><div class="k">Candidato</div><div class="v">Pierluigi Camozzi</div></div>
+        <div><div class="k">Relatore</div><div class="v">Prof. Ing. Lorenzo Marzola</div></div>
+        <div><div class="k">Università</div><div class="v">Università degli Studi di Ferrara</div></div>
+        <div><div class="k">A.A.</div><div class="v">2025 / 2026</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide" data-hue="215" data-section="Apertura">
+    <div class="slide-inner">
+      <div class="eyebrow">Il punto di partenza</div>
+      <div class="stat-wrap">
+        <div class="stat-big">95%</div>
+        <div class="stat-label">delle iniziative pilota di GenAI non produce un impatto economico misurabile.</div>
+      </div>
+      <div class="source">Fonte: Challapally et al., MIT — NANDA Initiative, 2025</div>
+      <div class="quote">Quasi mai è un problema del modello. È un problema del contesto che gli viene fornito.</div>
+      <p class="body">Da qui la domanda di questa tesi: <b>come si progetta il contesto di un agente AI perché funzioni davvero in produzione?</b></p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide" data-hue="215" data-section="Apertura">
+    <div class="slide-inner">
+      <div class="eyebrow">Obiettivi</div>
+      <h1 class="h1">Cosa si propone questo lavoro</h1>
+      <ul class="bullets">
+        <li>Progettare agenti AI integrati con sistemi informativi <b>enterprise</b> reali — CRM, ERP, piattaforme di ticketing.</li>
+        <li>Validare il ruolo di protocolli aperti — <code>Model Context Protocol</code>, <code>OpenAPI</code> — e di formati strutturati come <code>Markdown</code> e <code>JSON</code>.</li>
+        <li>Metter alla prova il paradigma del <b>Context Engineering</b> su tre casi applicativi reali.</li>
+        <li>Applicarlo a due ambiti strategici: <b>SEO</b> e <b>Customer Experience</b>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide" data-hue="215" data-section="Apertura">
+    <div class="slide-inner">
+      <div class="eyebrow">Struttura del lavoro</div>
+      <h1 class="h1">Il percorso della tesi</h1>
+      <div class="stepper">
+        <div class="step-row"><div class="badge">1</div><div class="stext"><div class="t">Context Engineering &amp; MCP</div><div class="d">Le fondamenta architetturali — protocolli, primitive, function calling.</div></div></div>
+        <div class="step-row"><div class="badge">2</div><div class="stext"><div class="t">Retrieval-Augmented Generation</div><div class="d">Leggere la conoscenza aziendale non strutturata.</div></div></div>
+        <div class="step-row"><div class="badge">3</div><div class="stext"><div class="t">Piattaforme di orchestrazione</div><div class="d">Agent Builder OpenAI, ElevenLabs, indigo.ai.</div></div></div>
+        <div class="step-row"><div class="badge">4</div><div class="stext"><div class="t">Casi realizzati &amp; conclusioni</div><div class="d">SEO, rete vendita, voicebot — e il divario tra tecnologia e adozione.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 : divider -->
+  <section class="slide divider" data-hue="215" data-section="Context Engineering">
+    <div class="slide-inner">
+      <div class="divider-num">01</div>
+      <h1 class="h1">Context Engineering &amp; Model Context Protocol</h1>
+      <p class="lead">Le fondamenta architetturali di un agente che funziona davvero</p>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide" data-hue="215" data-section="Context Engineering">
+    <div class="slide-inner">
+      <div class="eyebrow">Un cambio di paradigma</div>
+      <h1 class="h1">Dal Prompt Engineering al Context Engineering</h1>
+      <div class="grid-2">
+        <div class="card"><h3>Prompt Engineering</h3><p>Ottimizzare la singola istruzione testuale rivolta al modello. L'unità di lavoro è la stringa.</p></div>
+        <div class="card"><h3>Context Engineering</h3><p>Progettare dati, strumenti, vincoli e flussi conversazionali come un sistema coerente. L'unità di lavoro è l'architettura.</p></div>
+      </div>
+      <div class="quote">Un modello allo stato dell'arte, con un contesto lacunoso, produce inevitabilmente risultati inesatti.</div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide" data-hue="215" data-section="Context Engineering">
+    <div class="slide-inner">
+      <div class="eyebrow">Lo standard</div>
+      <h1 class="h1">Model Context Protocol (MCP)</h1>
+      <div class="grid-2">
+        <div class="card"><h3>Il problema</h3><p>Integrazioni punto-a-punto: un connettore ad hoc per ogni sistema. Fragili, costose, non scalano — e saturano la finestra di contesto con documentazione irrilevante.</p></div>
+        <div class="card"><h3>La risposta</h3><p>MCP crea un livello di astrazione <b style="color:var(--ink)">standard</b> tra agenti AI e fonti di dati, in lettura e in scrittura.</p></div>
+      </div>
+      <div class="quote">Come l'USB-C standardizza la connessione fisica tra dispositivi, MCP standardizza la connessione logica tra un modello e qualsiasi fonte dati.</div>
+      <div class="flow" style="margin-top:1.6rem">
+        <div class="flow-step"><span class="num">①</span><div class="t">Discover</div><div class="d">l'agente mappa le capacità disponibili sul server</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="num">②</span><div class="t">Read</div><div class="d">recupera le informazioni necessarie alla richiesta</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="num">③</span><div class="t">Act</div><div class="d">modifica, ove autorizzato, lo stato dei sistemi esterni</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide" data-hue="215" data-section="Context Engineering">
+    <div class="slide-inner">
+      <div class="eyebrow">Architettura</div>
+      <h1 class="h1">Host → Client → Server</h1>
+      <div class="grid-3">
+        <div class="card"><h3>Host</h3><p>L'applicazione che incorpora il modello, orchestra il flusso e interpreta gli intenti dell'utente.</p></div>
+        <div class="card"><h3>Client</h3><p>Middleware integrato nell'Host: gestisce una singola connessione standardizzata con un server MCP.</p></div>
+        <div class="card"><h3>Server</h3><p>Applicazione leggera e isolata che espone dati o funzionalità — modulare e riutilizzabile su Host diversi.</p></div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi-chip"><b>Resources</b> dati in lettura, via URI</div>
+        <div class="kpi-chip"><b>Prompt</b> template controllati dal server</div>
+        <div class="kpi-chip"><b>Tool</b> azioni con effetti collaterali</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide" data-hue="215" data-section="Context Engineering">
+    <div class="slide-inner">
+      <div class="eyebrow">Dal ragionamento all'azione</div>
+      <h1 class="h1">Function Calling</h1>
+      <div class="flow">
+        <div class="flow-step"><span class="num">1</span><div class="t">Signature dei tool</div><div class="d">il modello riceve nome, scopo e schema (JSON Schema) di ogni funzione disponibile</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="num">2</span><div class="t">Output strutturato</div><div class="d">riconosce la necessità e genera un JSON, non testo libero</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="num">3</span><div class="t">Esecuzione</div><div class="d">l'Host esegue realmente la funzione, locale o remota</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><span class="num">4</span><div class="t">Risposta finale</div><div class="d">il risultato è re-iniettato nel contesto del modello</div></div>
+      </div>
+      <div class="quote">Il modello ragiona. L'host esegue. — separation of concerns come principio di sicurezza.</div>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide" data-hue="215" data-section="Context Engineering">
+    <div class="slide-inner">
+      <div class="eyebrow">Il contratto</div>
+      <h1 class="h1">OpenAPI Specification (Swagger)</h1>
+      <ul class="bullets">
+        <li>Descrizione <b>machine-readable</b> di un'API REST, in <code>JSON</code> o <code>YAML</code>.</li>
+        <li>Endpoint, metodi HTTP, parametri di input, schemi di risposta — in un unico file.</li>
+        <li>Permette a un server MCP di <b>incapsulare</b> sistemi REST aziendali preesistenti come Tool per l'agente.</li>
+        <li>Condivide con i parametri dei Tool MCP lo stesso linguaggio di schema: <code>JSON Schema</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 11 : divider -->
+  <section class="slide divider" data-hue="265" data-section="RAG">
+    <div class="slide-inner">
+      <div class="divider-num">02</div>
+      <h1 class="h1">Retrieval-Augmented Generation</h1>
+      <p class="lead">Quando il contesto non è un dato, ma testo non strutturato</p>
+    </div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide" data-hue="265" data-section="RAG">
+    <div class="slide-inner">
+      <div class="eyebrow">Il meccanismo</div>
+      <h1 class="h1">Come funziona la RAG</h1>
+      <ul class="bullets">
+        <li>Disaccoppia la <b>conoscenza</b> (un database esterno) dalle capacità di <b>ragionamento</b> del modello.</li>
+        <li>Gli <code>embedding</code> mappano il significato del testo in uno spazio vettoriale.</li>
+        <li>I frammenti più pertinenti vengono recuperati e iniettati nel contesto al momento della query.</li>
+      </ul>
+      <div class="quote">A differenza del fine-tuning, il modello resta inalterato: la conoscenza si inietta a ogni singola interrogazione.</div>
+    </div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide" data-hue="265" data-section="RAG">
+    <div class="slide-inner">
+      <div class="eyebrow">Il criterio</div>
+      <h1 class="h1">Quando conviene usare la RAG — tre condizioni congiunte</h1>
+      <div class="grid-3">
+        <div class="card"><h3>Capienza</h3><p>Il corpus eccede la finestra di contesto del modello.</p></div>
+        <div class="card"><h3>Località</h3><p>La risposta è concentrata in pochi frammenti, non aggregata su migliaia di documenti.</p></div>
+        <div class="card"><h3>Natura semantica</h3><p>La pertinenza è di significato — non un dato strutturato, temporale o quantitativo.</p></div>
+      </div>
+      <p class="body" style="margin-top:1.4rem; color:var(--ink-dim)">Dato esatto → API diretta · Azione → Tool · Sintesi globale → aggregazione, non RAG pura.</p>
+    </div>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide" data-hue="265" data-section="RAG">
+    <div class="slide-inner">
+      <div class="eyebrow">Due regimi di conoscenza</div>
+      <h1 class="h1">RAG e Tool/MCP: complementari, non alternativi</h1>
+      <div class="grid-2">
+        <div class="card"><h3>RAG</h3><p>Conoscenza statica vettorializzata. L'agente <b style="color:var(--ink)">legge</b> testo non strutturato per similarità semantica.</p></div>
+        <div class="card"><h3>MCP / Tool</h3><p>Accesso in tempo reale ai sistemi sorgente. L'agente <b style="color:var(--ink)">legge e scrive</b> dati vivi.</p></div>
+      </div>
+      <div class="quote">Non sono mutuamente esclusivi: un retriever RAG può a sua volta essere esposto come Tool MCP.</div>
+      <p class="body" style="color:var(--ink-dim)">I casi Lenovo e Plenitude, tra poco, ne sono la prova empirica.</p>
+    </div>
+  </section>
+
+  <!-- 15 : divider -->
+  <section class="slide divider" data-hue="35" data-section="Casi Realizzati">
+    <div class="slide-inner">
+      <div class="divider-num">03</div>
+      <h1 class="h1">Casi Realizzati</h1>
+      <p class="lead">Tre stadi di complessità crescente del Context Engineering</p>
+    </div>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide" data-hue="35" data-section="Casi Realizzati">
+    <div class="slide-inner">
+      <div class="eyebrow">La progressione</div>
+      <h1 class="h1">Dal prompt statico all'orchestrazione transazionale</h1>
+      <div class="stepper">
+        <div class="step-row"><div class="badge">1</div><div class="stext"><div class="t">Younited — Google AI Studio</div><div class="d">Agente <b>all-prompt</b> per la produzione di contenuti SEO.</div></div></div>
+        <div class="step-row"><div class="badge">2</div><div class="stext"><div class="t">Lenovo — indigo.ai</div><div class="d"><b>RAG + multi-agente</b> per l'assistenza alla rete vendita.</div></div></div>
+        <div class="step-row"><div class="badge">3</div><div class="stext"><div class="t">Plenitude «Luce» — indigo.ai + ElevenLabs</div><div class="d"><b>Function calling</b> in tempo reale su un voicebot.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 -->
+  <section class="slide" data-hue="35" data-section="Casi Realizzati">
+    <div class="slide-inner">
+      <div class="eyebrow">Caso 1 — SEO</div>
+      <h1 class="h1">Younited — Pipeline SEO «all-prompt»</h1>
+      <div class="grid-2">
+        <div>
+          <div class="flow" style="flex-direction:column">
+            <div class="flow-step"><span class="num">1→5</span><div class="t">Brand → SEO → Brief → Link → Generazione</div><div class="d">cinque fasi sequenziali, contesto iniettato staticamente nel prompt</div></div>
+          </div>
+          <p class="body" style="color:var(--ink-dim); margin-top:1rem">Nessun tool, nessuna RAG: tutta l'intelligenza è nella catena di prompt e nei delimitatori.</p>
+        </div>
+        <div class="kpi-row" style="flex-direction:column; align-items:flex-start; margin-top:0">
+          <div class="kpi-chip"><b>−25/30%</b>&nbsp;tempo di produzione</div>
+          <div class="kpi-chip">Query Fan-Out a scala industriale</div>
+          <div class="kpi-chip">Conformità <b>E-E-A-T / YMYL</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 18 -->
+  <section class="slide" data-hue="35" data-section="Casi Realizzati">
+    <div class="slide-inner">
+      <div class="eyebrow">Caso 2 — Rete vendita</div>
+      <h1 class="h1">Lenovo — Assistente RAG multi-agente</h1>
+      <div class="grid-2">
+        <div class="card"><h3>Architettura</h3><p>Mother Agent qualifica il bisogno → instrada a 4 sub-agenti per fascia di prezzo (Essential, SMB, ThinkPad Classic, Workstation).</p></div>
+        <div class="card"><h3>Pipeline dati</h3><p>Excel cleaning → Markdown (Reducto) → Knowledge Base vettoriale indigo.ai.</p></div>
+      </div>
+      <div class="quote">Gli SKU venivano allucinati: il chunking spezzava la scheda prodotto. Soluzione → chunking guidato dalla struttura Markdown, codice e prezzo nello stesso vettore.</div>
+      <div class="kpi-row"><div class="kpi-chip"><b>~80%</b>&nbsp;automation rate</div></div>
+    </div>
+  </section>
+
+  <!-- 19 -->
+  <section class="slide" data-hue="35" data-section="Casi Realizzati">
+    <div class="slide-inner">
+      <div class="eyebrow">Caso 3 — Voicebot</div>
+      <h1 class="h1">Plenitude «Luce» — Function Calling in tempo reale</h1>
+      <ul class="bullets">
+        <li>Nessuna KB statica: backend <code>Swagger</code> interrogato live — <code>POST /lookup</code>, <code>POST /api/lettura</code>.</li>
+        <li>L'agente legge <b>e</b> scrive: da «consiglia» a «opera».</li>
+        <li>Stack vocale: <code>STT</code> → LLM (indigo.ai, GPT-4.1) → <code>TTS</code> (ElevenLabs).</li>
+        <li>Regole di business: disambiguazione multi-fornitura, filtro contatori teleletti.</li>
+      </ul>
+      <div class="kpi-row"><div class="kpi-chip"><b>~85%</b>&nbsp;automation rate</div></div>
+    </div>
+  </section>
+
+  <!-- 20 -->
+  <section class="slide" data-hue="35" data-section="Casi Realizzati">
+    <div class="slide-inner">
+      <div class="eyebrow">Sintesi</div>
+      <h1 class="h1">Tre casi, tre paradigmi</h1>
+      <table class="cmp">
+        <tr><th>Caso</th><th>Conoscenza</th><th>Azione</th><th>Paradigma</th></tr>
+        <tr><td class="case">Younited</td><td>Statica, nel prompt</td><td>Nessuna</td><td>All-prompt</td></tr>
+        <tr><td class="case">Lenovo</td><td>KB vettoriale</td><td>Lettura</td><td>RAG + multi-agente</td></tr>
+        <tr><td class="case">Plenitude</td><td>API in tempo reale</td><td>Lettura + scrittura</td><td>Function calling</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 21 : divider -->
+  <section class="slide divider" data-hue="165" data-section="Conclusioni">
+    <div class="slide-inner">
+      <div class="divider-num">04</div>
+      <h1 class="h1">Conclusioni</h1>
+      <p class="lead">Maturità tecnica e divario di adozione</p>
+    </div>
+  </section>
+
+  <!-- 22 -->
+  <section class="slide" data-hue="165" data-section="Conclusioni">
+    <div class="slide-inner">
+      <div class="eyebrow">Sul piano tecnico</div>
+      <h1 class="h1">La tecnologia è pronta</h1>
+      <ul class="bullets">
+        <li>Automation rate dell'<b>80–85%</b> nei casi reali presentati.</li>
+        <li><code>MCP</code> + <code>OpenAPI</code>: fondamenta interoperative solide.</li>
+        <li>Piattaforme industrialmente mature — Agent Builder OpenAI, ElevenLabs, indigo.ai.</li>
+        <li>Costo unitario dell'inferenza in costante calo.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 23 -->
+  <section class="slide" data-hue="165" data-section="Conclusioni">
+    <div class="slide-inner">
+      <div class="eyebrow">Sul piano strategico</div>
+      <h1 class="h1">Il vero collo di bottiglia è organizzativo</h1>
+      <div class="grid-2">
+        <div class="card"><h3>MIT, 2025</h3><p><b style="color:var(--ink)">95%</b> delle iniziative pilota non produce un impatto economico misurabile.</p></div>
+        <div class="card"><h3>McKinsey, 2025</h3><p><b style="color:var(--ink)">88%</b> usa AI, ma solo <b style="color:var(--ink)">1/3</b> scala enterprise-wide — solo <b style="color:var(--ink)">~6%</b> è «high performer».</p></div>
+      </div>
+      <div class="quote">La barriera non è il costo o la complessità della tecnologia, ma la difficoltà delle organizzazioni di assumere decisioni percepite come destabilizzanti.</div>
+      <p class="source">32% delle aziende prevede una contrazione dell'organico nei prossimi 12 mesi — McKinsey, 2025</p>
+    </div>
+  </section>
+
+  <!-- 24 : closing -->
+  <section class="slide closing" data-hue="165" data-section="Chiusura">
+    <div class="slide-inner">
+      <div class="eyebrow" style="justify-content:center">Grazie per l'attenzione</div>
+      <h1 class="h1">Domande?</h1>
+      <p class="lead" style="margin:0 auto">Pierluigi Camozzi — Tesi di Laurea Triennale<br>Università degli Studi di Ferrara</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="hint" id="hint">usa le freccette ← → per navigare · «O» per la panoramica · «F» schermo intero</div>
+
+<button class="navbtn" id="prevBtn" aria-label="Precedente">‹</button>
+<button class="navbtn" id="nextBtn" aria-label="Successiva" style="left:auto;">›</button>
+<button id="ovBtn" aria-label="Panoramica" title="Panoramica (O)">⊞</button>
+
+<div class="chrome">
+  <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="chrome-row">
+    <span class="section-tag" id="sectionTag">Apertura</span>
+    <span class="slide-num" id="slideNum">01 / 24</span>
+  </div>
+</div>
+
+<div id="overview">
+  <h2>Panoramica delle slide</h2>
+  <div class="ov-grid" id="ovGrid"></div>
+</div>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let idx = 0;
+
+  const progressFill = document.getElementById('progressFill');
+  const sectionTag = document.getElementById('sectionTag');
+  const slideNum = document.getElementById('slideNum');
+  const hint = document.getElementById('hint');
+  const overview = document.getElementById('overview');
+  const ovGrid = document.getElementById('ovGrid');
+
+  function titleOf(s){
+    const h = s.querySelector('h1');
+    return h ? h.textContent.trim() : (s.dataset.section || '');
+  }
+
+  function buildOverview(){
+    slides.forEach((s,i)=>{
+      const item = document.createElement('div');
+      item.className = 'ov-item';
+      item.innerHTML = '<div class="n">'+String(i+1).padStart(2,'0')+' · '+ (s.dataset.section||'') +'</div><div class="t">'+ titleOf(s) +'</div>';
+      item.addEventListener('click', ()=>{ go(i); closeOverview(); });
+      ovGrid.appendChild(item);
+    });
+  }
+  buildOverview();
+
+  function render(){
+    slides.forEach((s,i)=>{
+      s.classList.remove('active','prev','next');
+      if(i===idx) s.classList.add('active');
+      else if(i<idx) s.classList.add('prev');
+      else s.classList.add('next');
+    });
+    const hue = slides[idx].dataset.hue || 215;
+    document.documentElement.style.setProperty('--hue', hue);
+    progressFill.style.width = (((idx+1)/total)*100) + '%';
+    sectionTag.textContent = slides[idx].dataset.section || '';
+    slideNum.textContent = String(idx+1).padStart(2,'0') + ' / ' + total;
+    sectionTag.classList.remove('tag-pulse');
+    slideNum.classList.remove('tag-pulse');
+    requestAnimationFrame(()=>{ sectionTag.classList.add('tag-pulse'); slideNum.classList.add('tag-pulse'); });
+  }
+
+  function go(newIdx){
+    newIdx = Math.max(0, Math.min(total-1, newIdx));
+    if(newIdx === idx) return;
+    idx = newIdx;
+    render();
+    hideHint();
+    history.replaceState(null, '', '#'+(idx+1));
+  }
+
+  function hideHint(){ hint.classList.add('hide'); }
+
+  function openOverview(){ overview.classList.add('open'); }
+  function closeOverview(){ overview.classList.remove('open'); }
+  function toggleOverview(){ overview.classList.contains('open') ? closeOverview() : openOverview(); }
+
+  // deep-link: open with #12 to start at slide 12
+  const hashN = parseInt(location.hash.replace('#',''), 10);
+  if(!isNaN(hashN) && hashN >= 1 && hashN <= total){ idx = hashN - 1; }
+
+  // initial state without animation
+  slides.forEach((s,i)=>{
+    s.classList.add('noanim');
+    if(i===idx) s.classList.add('active'); else if(i<idx) s.classList.add('prev'); else s.classList.add('next');
+  });
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{ slides.forEach(s=>s.classList.remove('noanim')); });
+  });
+  render();
+
+  document.getElementById('prevBtn').addEventListener('click', (e)=>{ e.stopPropagation(); go(idx-1); });
+  document.getElementById('nextBtn').addEventListener('click', (e)=>{ e.stopPropagation(); go(idx+1); });
+  document.getElementById('ovBtn').addEventListener('click', (e)=>{ e.stopPropagation(); toggleOverview(); });
+
+  window.addEventListener('keydown', (e)=>{
+    if(overview.classList.contains('open')){
+      if(e.key === 'Escape' || e.key.toLowerCase()==='o'){ closeOverview(); }
+      return;
+    }
+    switch(e.key){
+      case 'ArrowRight': case 'ArrowDown': case ' ': case 'PageDown':
+        e.preventDefault(); go(idx+1); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp': case 'Backspace':
+        e.preventDefault(); go(idx-1); break;
+      case 'Home': go(0); break;
+      case 'End': go(total-1); break;
+      case 'o': case 'O': openOverview(); break;
+      case 'f': case 'F':
+        if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
+        else { document.exitFullscreen(); }
+        break;
+    }
+  });
+
+  // click navigation on slide area (right=next, left=prev)
+  document.getElementById('deck').addEventListener('click', (e)=>{
+    const x = e.clientX / window.innerWidth;
+    if(x < .22) go(idx-1); else go(idx+1);
+    hideHint();
+  });
+
+  // basic touch swipe
+  let touchX = null;
+  document.addEventListener('touchstart', e=>{ touchX = e.touches[0].clientX; }, {passive:true});
+  document.addEventListener('touchend', e=>{
+    if(touchX===null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    if(Math.abs(dx) > 50){ dx < 0 ? go(idx+1) : go(idx-1); }
+    touchX = null;
+  }, {passive:true});
+
+  setTimeout(hideHint, 7000);
+})();
+</script>
+</body>
+</html>
