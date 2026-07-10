@@ -26,7 +26,9 @@ const HIDE_UI_CSS = `
   const merged = await PDFDocument.create();
 
   for (let i = 1; i <= TOTAL; i++) {
-    const url = 'file://' + path.resolve(DECK_PATH) + '#' + i;
+    // a hash-only URL change is a same-document navigation in Chrome and
+    // wouldn't re-run the deck's script, so the query param forces a real reload
+    const url = 'file://' + path.resolve(DECK_PATH) + '?s=' + i + '#' + i;
     await page.goto(url, { waitUntil: 'networkidle0' });
     await page.addStyleTag({ content: HIDE_UI_CSS });
     await new Promise(r => setTimeout(r, 200));
