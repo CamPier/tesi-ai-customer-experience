@@ -1,0 +1,14 @@
+{
+  "name": "export-pdf",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Esporta le slide di index.html in un unico PDF",
+  "main": "export.js",
+  "scripts": {
+    "export": "node export.js"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "puppeteer-core": "^25.3.0"
+  }
+}
