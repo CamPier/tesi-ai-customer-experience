@@ -315,7 +315,8 @@ table.cmp tr:last-child td{ border-bottom:none; }
           </ul>
           <div class="quote">Il paradigma passa da «agente che consiglia» ad «agente che opera».</div>
         </div>
-        <div style="background:#111; border:1px solid var(--line); border-radius:40px; padding:14px; max-width:330px; width:100%; margin:0 auto; box-shadow:0 30px 60px -20px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);">
+        <div style="background:#111; border:1px solid var(--line); border-radius:40px; padding:14px; max-width:330px; width:100%; margin:0 auto; box-shadow:0 30px 60px -20px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04); position:relative;">
+          <div style="position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:var(--accent); color:#08090d; font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:.4em 1.1em; border-radius:999px; box-shadow:0 4px 14px rgba(0,0,0,.4); z-index:5; white-space:nowrap;">Demo interattiva</div>
           <div style="background:#F7F7F5; border-radius:28px; padding:0 0 22px; display:flex; flex-direction:column; align-items:center; min-height:580px; position:relative; font-family:var(--font-sans); overflow:hidden;">
 
             <div style="width:64px; height:22px; background:#111; border-radius:0 0 14px 14px; position:absolute; top:0; left:50%; transform:translateX(-50%); z-index:2;"></div>
@@ -373,7 +374,7 @@ table.cmp tr:last-child td{ border-bottom:none; }
       <div class="grid-2">
         <div class="card"><h3>Agente AI</h3><p>Un AI Agent è un assistente conversazionale autonomo che comprende la richiesta dell'utente in linguaggio naturale, recupera il contesto dai sistemi del cliente (via tool/MCP e API), esegue azioni e genera la risposta — su qualunque canale, con guardrail e valutazione della qualità.</p></div>
         <div class="card">
-          <h3>Piattaforme Orchestratrici</h3>
+          <h3>Piattaforme Orchestratrici, in grado di</h3>
           <ul class="bullets" style="margin-top:.5rem">
             <li>Costruire agenti a partire da un'interfaccia unica.</li>
             <li>Orchestrare più agenti, facendoli dialogare tra loro.</li>
@@ -383,7 +384,7 @@ table.cmp tr:last-child td{ border-bottom:none; }
           </ul>
         </div>
       </div>
-      <div class="quote">Il concetto centrale: un'AI in grado di colloquiare con i sistemi informativi aziendali.</div>
+      <div class="quote">Il concetto centrale: un'AI in grado di colloquiare con i sistemi informativi.</div>
     </div>
   </section>
 
@@ -392,16 +393,8 @@ table.cmp tr:last-child td{ border-bottom:none; }
     <div class="slide-inner">
       <div class="eyebrow">Come ho fatto — Context Engineering</div>
       <h1 class="h1">Context Engineering</h1>
-      <div class="grid-3">
-        <div class="card">
-          <h3>Prompt Engineering</h3>
-          <p>Il prompt engineering è la pratica di progettare e affinare le istruzioni (prompt) date a un modello linguistico per ottenere risposte accurate, coerenti e utili: definire ruolo e obiettivo, fornire esempi, vincolare formato e tono, porre guardrail e iterare sulla base dei risultati.</p>
-          <p style="margin-top:.7rem; font-size:.85rem; color:var(--ink-dim2); font-style:italic;">Prompt engineering = come istruisci il modello (le istruzioni).</p>
-        </div>
-        <div class="card"><h3>RAG</h3><p>La RAG (Retrieval-Augmented Generation) è la tecnica per cui il modello, prima di rispondere, recupera i frammenti rilevanti da una base di conoscenza documentale (KB) e li usa come contesto per generare una risposta ancorata alle fonti, riducendo le allucinazioni.</p></div>
-        <div class="card"><h3>Context Engineering</h3><p>Il context engineering è la disciplina di fornire al modello AI il contesto giusto al momento giusto — dati vivi letti dai sistemi del cliente (CRM, gestionali, e-commerce) via MCP/tool — invece di affidarsi a knowledge statica precaricata.</p></div>
-      </div>
-      <div class="quote">Il contesto determina il risultato: dati, strumenti e vincoli quanto il prompt stesso.</div>
+      <p class="lead" style="margin-bottom:1.2rem">Ha cambiato la capacità dell'AI di comunicare con i sistemi informatici.</p>
+      <img src="assets/context-engineering-diagram.svg" alt="Diagramma: il prompt dell'agente nasce dall'integrazione di prompt engineering (istruzioni), RAG (conoscenza statica dalla knowledge base) e context engineering (dati live dai sistemi via MCP/tool); l'agente AI esegue questo prompt integrato e genera una risposta o un'azione sui sistemi." style="width:auto; max-width:100%; height:auto; max-height:48vh; display:block; margin:0 auto;">
     </div>
   </section>
 
@@ -414,7 +407,7 @@ table.cmp tr:last-child td{ border-bottom:none; }
         <div class="card"><h3>MCP</h3><p>Perché MCP: un protocollo standard per connettere l'AI ai sistemi del cliente. Un'integrazione invece di tante custom, dati vivi al momento giusto, chiamata autonoma dei tool, riuso tra agenti e scope controllato. Meno codice, più governance, integrazioni più rapide.</p></div>
         <div class="card"><h3>Tools &amp; Swagger</h3><p>Quando un sistema non ha un server MCP nativo, si genera la specifica OpenAPI/Swagger dalle API REST esistenti del cliente e la si incolla in piattaforma, che la trasforma in tool richiamabile (stesso comportamento di un MCP).</p></div>
       </div>
-      <div class="quote">Il vantaggio comune: l'agente accede e agisce sui sistemi reali, senza integrazioni ad hoc per ognuno.</div>
+      <div class="quote">Il vantaggio comune: l'agente accede e agisce sui sistemi reali, gestisce in autonomia le chiamate API, senza integrazioni ad hoc per ognuno.</div>
     </div>
   </section>
 
@@ -456,7 +449,7 @@ table.cmp tr:last-child td{ border-bottom:none; }
   </section>
 
   <!-- 9 -->
-  <section class="slide" data-hue="165" data-section="Conclusioni">
+  <section class="slide" data-hue="165" data-section="Considerazioni">
     <div class="slide-inner">
       <div class="eyebrow">Sul piano dei risultati</div>
       <h1 class="h1">Nei progetti di Customer Experience, automation rate al 70/80%</h1>
@@ -469,7 +462,7 @@ table.cmp tr:last-child td{ border-bottom:none; }
   </section>
 
   <!-- 10 -->
-  <section class="slide" data-hue="165" data-section="Conclusioni">
+  <section class="slide" data-hue="165" data-section="Considerazioni">
     <div class="slide-inner">
       <div class="eyebrow">Il punto di partenza del dibattito</div>
       <div class="stat-wrap">
@@ -482,38 +475,50 @@ table.cmp tr:last-child td{ border-bottom:none; }
   </section>
 
   <!-- 11 -->
-  <section class="slide" data-hue="165" data-section="Conclusioni">
+  <section class="slide" data-hue="165" data-section="Considerazioni">
     <div class="slide-inner">
-      <div class="eyebrow">Il contesto in cui opera</div>
-      <h1 class="h1">Ambiente enterprise: estremamente regolato</h1>
+      <div class="eyebrow">Sul piano progettuale</div>
+      <h1 class="h1">Forward Engineering</h1>
       <ul class="bullets">
-        <li>Ogni azione in scrittura passa da vincoli di <b>compliance</b>, privacy e sicurezza dei dati.</li>
-        <li>Le architetture devono prevedere <b>audit trail</b> e, dove serve, supervisione umana sulle azioni più sensibili.</li>
-        <li>Ogni nuovo tool o server MCP richiede validazione da parte di funzioni interne — sicurezza, legale, IT.</li>
+        <li>In ambiente <b>enterprise</b>, <b>governance e security</b> restano vincoli fissi e non negoziabili, qualunque sia la tecnologia adottata.</li>
+        <li>I progetti di AI hanno una <b>mutevolezza molto rapida</b>: la tecnologia cambia radicalmente nel giro di un anno — l'AI tra un anno sarà diversa da quella di oggi.</li>
+        <li>Per questo si dovrebbe adottare un modello di <b>forward engineering</b>: si fissano gli obiettivi del processo, non passaggi rigidi, lasciando il progetto libero di evolvere senza vincoli strutturati.</li>
       </ul>
-      <div class="quote">La flessibilità tecnica dell'agente incontra il perimetro rigido dell'organizzazione che lo ospita.</div>
+      <div class="quote">Basta pensare al prima e al dopo MCP: in meno di un anno il modo stesso di integrare l'AI con i sistemi è già cambiato radicalmente.</div>
     </div>
   </section>
 
   <!-- 12 -->
-  <section class="slide" data-hue="165" data-section="Conclusioni">
+  <section class="slide" data-hue="165" data-section="Considerazioni">
     <div class="slide-inner">
       <div class="eyebrow">Sul piano organizzativo</div>
-      <h1 class="h1">Il vero ostacolo è l'adozione, non la tecnologia</h1>
-      <p class="body" style="color:var(--ink-dim); margin-bottom:1rem">Una concezione ancora vecchia dell'organizzazione del lavoro genera frizioni cross-ruolo che rallentano l'adozione:</p>
+      <h1 class="h1">L'adozione è un ostacolo</h1>
       <div class="kpi-row">
         <div class="kpi-chip"><b>IT</b> — governance dei sistemi</div>
         <div class="kpi-chip"><b>Business</b> — pressione sul ROI immediato</div>
         <div class="kpi-chip"><b>HR</b> — impatto su ruoli e competenze</div>
         <div class="kpi-chip"><b>Legal</b> — responsabilità e conformità</div>
-        <div class="kpi-chip"><b>CISO</b> — superficie di rischio</div>
+        <div class="kpi-chip"><b>CISO</b> — sicurezza informatica</div>
       </div>
       <div class="quote">La barriera non è il costo o la complessità della tecnologia, ma la difficoltà delle organizzazioni di assumere decisioni percepite come destabilizzanti.</div>
       <p class="source">88% delle aziende usa AI, ma solo 1/3 la scala enterprise-wide — McKinsey, 2025</p>
     </div>
   </section>
 
-  <!-- 13 : closing -->
+  <!-- 13 -->
+  <section class="slide" data-hue="165" data-section="Conclusioni">
+    <div class="slide-inner">
+      <div class="eyebrow">Conclusioni</div>
+      <h1 class="h1">La tecnologia è pronta, l'adozione enterprise non ancora</h1>
+      <div class="grid-2">
+        <div class="card"><h3>Tecnologia</h3><p>È già pronta per il primo livello di Customer Experience: un agente può dialogare, guidare e assistere il cliente finale in autonomia.</p></div>
+        <div class="card"><h3>Adozione enterprise</h3><p>Non è ancora matura, proprio per le considerazioni viste prima: vincoli fissi di governance e security, velocità con cui l'AI evolve e resistenza organizzativa al cambiamento.</p></div>
+      </div>
+      <div class="quote">Il limite, oggi, non è più cosa la tecnologia sa fare — ma quanto velocemente l'impresa riesce ad adottarla.</div>
+    </div>
+  </section>
+
+  <!-- 14 : closing -->
   <section class="slide closing" data-hue="165" data-section="Chiusura">
     <div class="slide-inner">
       <h1 class="h1">Grazie per l'attenzione</h1>
