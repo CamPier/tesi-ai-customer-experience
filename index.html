@@ -242,6 +242,37 @@ table.cmp tr:last-child td{ border-bottom:none; }
 .ov-item .n{ font-family:var(--font-mono); font-size:.72rem; color:var(--accent); }
 .ov-item .t{ font-size:.85rem; color:var(--ink); margin-top:.25rem; line-height:1.3; }
 
+/* ---------- Speaker notes panel ---------- */
+#notesPanel{
+  position:fixed; left:0; right:0; bottom:0; z-index:15;
+  max-height:38vh; transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.22,.61,.36,1);
+  background:rgba(8,9,13,.96); backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+  box-shadow:0 -20px 50px -20px rgba(0,0,0,.6);
+}
+#notesPanel.open{ transform:translateY(0); }
+.notes-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.8rem 1.6rem; border-bottom:1px solid var(--line);
+}
+.notes-head .n-title{ font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); font-weight:700; }
+.notes-head .n-hint{ font-size:.76rem; color:var(--ink-dim2); }
+.notes-body{
+  padding:1.1rem 1.6rem 1.6rem; overflow-y:auto; max-height:calc(38vh - 2.6rem);
+  font-family:var(--font-serif); font-size:clamp(1rem,1.5vw,1.22rem); line-height:1.6; color:var(--ink);
+}
+.notes-body ul{ margin:.4em 0; padding-left:1.3em; }
+.notes-body li{ margin-bottom:.3em; }
+.notes-body em{ color:var(--gold); font-style:italic; }
+.notes-body strong{ color:var(--accent); }
+
+@media (max-width: 600px){
+  #notesPanel{ max-height:50vh; }
+  .notes-body{ max-height:calc(50vh - 2.6rem); font-size:.94rem; }
+  .notes-head{ padding:.65rem 1rem; }
+}
+
 @media (max-width: 900px){
   .grid-2{ grid-template-columns:1fr; gap:1.4rem; }
   .grid-3{ grid-template-columns:1fr; }
@@ -528,11 +559,19 @@ table.cmp tr:last-child td{ border-bottom:none; }
 
 </div>
 
-<div class="hint" id="hint">usa le freccette ← → per navigare · «O» per la panoramica · «F» schermo intero</div>
+<div class="hint" id="hint">usa le freccette ← → per navigare · «O» per la panoramica · «N» per le note · «F» schermo intero</div>
 
 <button class="navbtn" id="prevBtn" aria-label="Precedente">‹</button>
 <button class="navbtn" id="nextBtn" aria-label="Successiva" style="left:auto;">›</button>
 <button id="ovBtn" aria-label="Panoramica" title="Panoramica (O)">⊞</button>
+
+<div id="notesPanel">
+  <div class="notes-head">
+    <span class="n-title">Note discorso</span>
+    <span class="n-hint">tasto «N» per chiudere</span>
+  </div>
+  <div class="notes-body" id="notesBody"></div>
+</div>
 
 <div class="chrome">
   <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
@@ -559,6 +598,25 @@ table.cmp tr:last-child td{ border-bottom:none; }
   const hint = document.getElementById('hint');
   const overview = document.getElementById('overview');
   const ovGrid = document.getElementById('ovGrid');
+  const notesPanel = document.getElementById('notesPanel');
+  const notesBody = document.getElementById('notesBody');
+
+  const speakerNotes = [
+    `Buongiorno sono Pierluigi Camozzi e oggi vi presento la mia tesi di laurea triennale in Tecnologie per l'Industria Digitale. Il lavoro nasce da un'esperienza diretta sul campo: durante uno stage ho <strong>progettato e sviluppato sistemi agentici conversazionali per applicazioni di Customer Experience in contesto enterprise</strong>. In questi minuti vi racconterò cosa ho realizzato, come l'ho realizzato, e quali considerazioni più ampie questo percorso mi ha permesso di maturare sull'adozione dell'intelligenza artificiale nelle aziende.`,
+    `Il progetto più rappresentativo del mio lavoro è "Lucilla", una demo di assistente vocale sviluppato per Eni Plenitude. Non si tratta di un chatbot, ma di un agente accessibile tramite una vera e propria telefonata: il cliente chiama, e Lucilla lo riconosce, dialoga con lui in linguaggio naturale e lo guida nell'invio dell'autolettura del contatore, in totale autonomia, dall'inizio alla fine. Questo progetto rappresenta bene il cambio di paradigma al centro della mia tesi: <em>si passa da un agente che consiglia a un agente che opera</em> concretamente sui sistemi aziendali.`,
+    `Per capire come questo sia possibile, bisogna partire da due concetti chiave. <strong>Un AI Agent</strong> è un assistente conversazionale autonomo che comprende la richiesta dell'utente in linguaggio naturale, recupera contesto dai sistemi del cliente tramite tool e API, esegue azioni e genera una risposta, su qualsiasi canale. <strong>Le piattaforme orchestratrici</strong>, come indigo.ai, permettono di costruire questi agenti da un'unica interfaccia, farli dialogare tra loro, gestire la knowledge base su cui si basano, integrarli con i sistemi informativi esistenti e definire guardrail per un comportamento sicuro. Il concetto centrale è proprio questo: <em>un'intelligenza artificiale in grado di colloquiare con i sistemi informativi</em>.`,
+    `Ciò che ha reso possibile questo salto è il "context engineering", che ha cambiato radicalmente la capacità dell'AI di comunicare con i sistemi informatici. Il prompt che l'agente esegue nasce dall'integrazione di tre componenti: <ul><li>il <strong>prompt engineering</strong>, cioè le istruzioni;</li><li>la <strong>RAG</strong>, la conoscenza statica recuperata dalla knowledge base;</li><li>il <strong>context engineering</strong>, i dati live recuperati dai sistemi tramite MCP e tool.</li></ul>L'agente esegue questo prompt integrato e genera di conseguenza una risposta, oppure un'azione diretta sui sistemi aziendali.`,
+    `Per collegare l'agente ai sistemi ho lavorato soprattutto con due meccanismi. Il primo è <strong>l'MCP</strong>, un protocollo standard che permette di connettere l'AI ai sistemi del cliente con un'unica integrazione invece di tante integrazioni custom: dati sempre aggiornati, chiamata autonoma dei tool, riuso tra più agenti e scope controllato. Il secondo si usa quando un sistema non ha un server MCP nativo: si genera la <strong>specifica OpenAPI</strong>, o Swagger, dalle API REST esistenti e la si carica in piattaforma, che la trasforma in un tool richiamabile. In entrambi i casi il vantaggio è lo stesso: <em>l'agente accede e agisce sui sistemi reali, gestendo da solo le chiamate API</em>.`,
+    `Dietro questi progetti c'è uno stack di strumenti concreto. indigo.ai per l'orchestrazione conversazionale, il RAG e le architetture multi-agente. ElevenLabs per la sintesi vocale del voicebot Lucilla. Agent Builder di OpenAI per la prototipazione rapida di nuovi agenti. Replit per sviluppo e hosting veloce dei prototipi. Postman per testare e validare API ed endpoint Swagger. E Reducto per il parsing dei documenti, ad esempio per convertire fogli Excel in Markdown e JSON per la knowledge base del progetto Lenovo.`,
+    `Ho affrontato tre casi con tre scopi molto diversi tra loro. <ul><li>Per Eni, il progetto Plenitude Lucilla, con indigo.ai ed ElevenLabs: un voicebot vocale che guida il cliente finale nell'invio dell'autolettura del contatore in tempo reale.</li><li>Per Lenovo, con indigo.ai: un agente che recupera il catalogo prodotti e assiste il venditore della rete retail nella scelta del modello giusto, via chat.</li><li>Per Younited, con Google AI Studio: un agente che automatizza il processo interno di produzione di nuovi contenuti SEO, sempre via chat.</li></ul>Tre canali, tre utenti finali, un'unica logica agentica di fondo.`,
+    `Da qui vorrei passare alle considerazioni più ampie che questo lavoro mi ha permesso di sviluppare, che vanno oltre i singoli progetti tecnici.`,
+    `Sul piano dei risultati, nei progetti di Customer Experience si raggiunge tipicamente un automation rate del 70-80%: significa che 7-8 richieste su 10 vengono gestite dall'agente dall'inizio alla fine, senza intervento umano. Per l'azienda questo si traduce in un impatto concreto: <ul><li>riduzione dei costi operativi del servizio clienti</li><li>possibilità di scalare i volumi senza scalare proporzionalmente il personale</li><li>operatori umani liberati dalle richieste ripetitive per concentrarsi sui casi complessi ad alto valore.</li></ul><em>Quando l'agente è progettato bene, l'AI agentica produce quindi un impatto reale e misurabile sui KPI di business</em> dell'azienda, non solo un miglioramento percepito dall'utente.`,
+    `Questo risultato però va contestualizzato: secondo uno studio del 2025 del MIT, della NANDA Initiative, il 95% dei progetti pilota di GenAI non ha prodotto alcun ritorno economico o profitto misurabile. La risposta è che quasi mai il problema è il modello di intelligenza artificiale in sé: <strong>è quasi sempre un problema di contesto, tecnico e organizzativo</strong>, quello che viene fornito all'agente. Sul piano tecnico, significa sistemi legacy senza API esposte, knowledge base incomplete o disallineate, dati chiusi in silos che l'agente non riesce a raggiungere in tempo reale. Sul piano organizzativo, significa processi aziendali non definiti con chiarezza, o governance che blocca l'accesso ai sistemi prima ancora di iniziare. <em>Lo stesso modello, con contesto diverso, produce risultati radicalmente diversi.</em>`,
+    `Da questa considerazione nasce un punto progettuale importante. In ambiente enterprise, governance e security restano vincoli fissi e non negoziabili, qualunque sia la tecnologia adottata. Allo stesso tempo, i progetti di AI hanno una mutevolezza molto rapida: la tecnologia cambia radicalmente nel giro di un anno. Per questo credo si debba adottare un modello di forward engineering: si fissano gli obiettivi del processo, non passaggi rigidi, lasciando il progetto libero di evolvere. Basta pensare al prima e al dopo MCP: <em>in meno di un anno il modo stesso di integrare l'AI con i sistemi è già cambiato radicalmente</em>.`,
+    `Sul piano organizzativo, l'adozione stessa è spesso l'ostacolo principale. Non basta che la tecnologia funzioni: attorno a un progetto del genere ci sono tante persone diverse in azienda, e devono essere tutte d'accordo prima di partire. Chi gestisce i sistemi informatici vuole essere sicuro che tutto resti sotto controllo. Chi decide gli investimenti vuole vedere un ritorno economico in tempi brevi. Chi si occupa delle persone si chiede che effetto avrà sui ruoli e sul lavoro dei dipendenti. Chi si occupa di normative e sicurezza vuole garanzie prima di dare il via libera. Mettere d'accordo tutte queste parti richiede tempo, ed è spesso più lento e complicato dello sviluppo tecnico stesso. <em>La barriera non è il costo o la complessità della tecnologia, ma la difficoltà delle organizzazioni di prendere decisioni percepite come destabilizzanti.</em>`,
+    `Arrivo quindi alla conclusione: la tecnologia è pronta, l'adozione enterprise non ancora. <ul><li>Sul piano tecnologico, siamo già pronti per il primo livello di Customer Experience: un agente può dialogare, guidare e assistere il cliente finale in autonomia, come dimostra il progetto Lucilla.</li><li>Sul piano dell'adozione enterprise, invece, la maturità non c'è ancora, per tre motivi legati tra loro: la tecnologia cambia più in fretta di quanto un'azienda riesca a decidere e organizzarsi; le regole di sicurezza e controllo dei sistemi non si possono aggirare, qualunque sia la tecnologia adottata; e le persone coinvolte in azienda faticano a prendere decisioni che percepiscono come rischiose per il proprio ruolo o per l'organizzazione.</li></ul><em>Il limite, oggi, non è più cosa la tecnologia sa fare, ma quanto velocemente l'impresa riesce ad adottarla.</em>`,
+    `Vi ringrazio per l'attenzione.`
+  ];
 
   function titleOf(s){
     const h = s.querySelector('h1');
@@ -591,6 +649,7 @@ table.cmp tr:last-child td{ border-bottom:none; }
     sectionTag.classList.remove('tag-pulse');
     slideNum.classList.remove('tag-pulse');
     requestAnimationFrame(()=>{ sectionTag.classList.add('tag-pulse'); slideNum.classList.add('tag-pulse'); });
+    notesBody.innerHTML = speakerNotes[idx] || '';
   }
 
   function go(newIdx){
@@ -607,6 +666,9 @@ table.cmp tr:last-child td{ border-bottom:none; }
   function openOverview(){ overview.classList.add('open'); }
   function closeOverview(){ overview.classList.remove('open'); }
   function toggleOverview(){ overview.classList.contains('open') ? closeOverview() : openOverview(); }
+
+  function toggleNotes(){ notesPanel.classList.toggle('open'); }
+  function closeNotes(){ notesPanel.classList.remove('open'); }
 
   // deep-link: open with #12 to start at slide 12
   const hashN = parseInt(location.hash.replace('#',''), 10);
@@ -631,6 +693,7 @@ table.cmp tr:last-child td{ border-bottom:none; }
       if(e.key === 'Escape' || e.key.toLowerCase()==='o'){ closeOverview(); }
       return;
     }
+    if(e.key === 'Escape' && notesPanel.classList.contains('open')){ closeNotes(); return; }
     switch(e.key){
       case 'ArrowRight': case 'ArrowDown': case ' ': case 'PageDown':
         e.preventDefault(); go(idx+1); break;
@@ -639,6 +702,7 @@ table.cmp tr:last-child td{ border-bottom:none; }
       case 'Home': go(0); break;
       case 'End': go(total-1); break;
       case 'o': case 'O': openOverview(); break;
+      case 'n': case 'N': toggleNotes(); break;
       case 'f': case 'F':
         if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
         else { document.exitFullscreen(); }
