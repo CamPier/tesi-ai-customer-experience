@@ -9,9 +9,26 @@ const TOTAL = parseInt(process.argv[4], 10) ||
   fs.readFileSync(DECK_PATH, 'utf8').match(/<section class="slide/g).length;
 const CHROME_PATH = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
+// The deck's content column has a fixed max-width and the slide padding is
+// in vw/vh, so rendering at the deck's native 1920x1080 leaves a lot of
+// unused margin around the content. Exporting at a smaller (but same
+// 16:9) viewport/page size makes the content fill the page more, without
+// touching the deck's own CSS (which stays tuned for a real 1920x1080
+// screen when presenting live).
+const PDF_WIDTH = 1536;
+const PDF_HEIGHT = 864;
+
 const HIDE_UI_CSS = `
   .hint, .navbtn, #ovBtn, .chrome, #overview { display: none !important; }
   .slide, .slide.noanim { transition: none !important; }
+  /* Chrome's print-to-PDF path doesn't blur box-shadow correctly: it
+     paints the shadow's bounding box as a solid rectangle instead of a
+     soft glow. Drop it here only, so the live deck keeps the glow. */
+  #plenitudeOrbCore { box-shadow: none !important; }
+  /* Print-only: the h1 sits taller in the print layout than on screen,
+     so the phone mockup card creeps up and overlaps the title. Give the
+     title extra clearance here only. */
+  .slide-inner:has(#plenitudeAudio) h1.h1 { margin-bottom: 2.6rem !important; }
 `;
 
 (async () => {
@@ -20,7 +37,7 @@ const HIDE_UI_CSS = `
     headless: 'new',
   });
   const page = await browser.newPage();
-  await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
+  await page.setViewport({ width: PDF_WIDTH, height: PDF_HEIGHT, deviceScaleFactor: 2 });
   await page.emulateMediaType('screen');
 
   const merged = await PDFDocument.create();
@@ -34,8 +51,8 @@ const HIDE_UI_CSS = `
     await new Promise(r => setTimeout(r, 200));
 
     const pdfBuffer = await page.pdf({
-      width: '1920px',
-      height: '1080px',
+      width: PDF_WIDTH + 'px',
+      height: PDF_HEIGHT + 'px',
       printBackground: true,
       pageRanges: '1',
       margin: { top: 0, bottom: 0, left: 0, right: 0 },
