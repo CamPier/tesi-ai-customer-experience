@@ -23,20 +23,21 @@ Per capire come questo sia possibile, bisogna partire da due concetti chiave.
  **Le piattaforme orchestratrici**, come indigo.ai, permettono di costruire questi agenti da un'unica interfaccia, farli dialogare tra loro, gestire la knowledge base su cui si basano, integrarli con i sistemi informativi esistenti e definire guardrail per un comportamento sicuro. Il concetto centrale è proprio questo: *un'intelligenza artificiale in grado di colloquiare con i sistemi informativi*.
 
 ## 4 · Context Engineering
-*(~42s)*
+*(~63s)*
 
-Ciò che ha reso possibile questo salto è il "context engineering", che ha cambiato radicalmente la capacità dell'AI di comunicare con i sistemi informatici. 
-Il prompt che l'agente esegue nasce dall'integrazione di tre componenti: 
-- il **prompt** engineering, cioè le istruzioni; 
-- la **RAG**, la conoscenza statica recuperata dalla knowledge base; 
--  il **context engineering**, i dati live recuperati dai sistemi tramite MCP e tool. L'agente esegue questo prompt integrato e genera di conseguenza una risposta, oppure un'azione diretta sui sistemi aziendali.
+Ciò che ha reso possibile questo salto è il "context engineering", che ha cambiato radicalmente la capacità dell'AI di comunicare con i sistemi informatici. Vediamo ora come nasce davvero il prompt che l'agente esegue, perché è il punto tecnico centrale di tutto il lavoro. Ad ogni richiesta, l'agente non riceve solo il messaggio dell'utente, ma un prompt ricostruito al momento, che integra tre fonti diverse, qui a sinistra nel diagramma:
+- le **istruzioni di base** — chi è l'agente, il suo obiettivo, il tono, i limiti che non deve superare;
+- la **RAG**, conoscenza statica recuperata dalla knowledge base, cioè i documenti dell'azienda;
+- e il **context engineering**, dati live, presi in tempo reale dai sistemi del cliente tramite MCP o tool — per esempio lo stato di un contatore o di un ordine.
+
+Queste tre fonti confluiscono in un unico prompt integrato, ricostruito da capo a ogni richiesta. È questo prompt completo che il modello, l'agente AI, esegue davvero: lo legge, decide se richiamare un tool per agire sui sistemi, e genera come risultato una risposta per il cliente oppure un'azione diretta sui sistemi aziendali.
 
 ## 5 · MCP, Tools & Swagger
-*(~50s)*
+*(~63s)*
 
-Per collegare l'agente ai sistemi ho lavorato soprattutto con due meccanismi.
- Il primo è **l'MCP**, un protocollo standard che permette di connettere l'AI ai sistemi del cliente con un'unica integrazione invece di tante integrazioni custom: dati sempre aggiornati, chiamata autonoma dei tool, riuso tra più agenti e scope controllato.
-  Il secondo si usa quando un sistema non ha un server MCP nativo: si genera la **specifica OpenAPI**, o Swagger, dalle API REST esistenti e la si carica in piattaforma, che la trasforma in un tool richiamabile. In entrambi i casi il vantaggio è lo stesso: *l'agente accede e agisce sui sistemi reali, gestendo da solo le chiamate API*.
+Per collegare l'agente ai sistemi, il meccanismo centrale sono i **tools**: funzioni che l'agente richiama da solo per agire sui sistemi.
+ **L'MCP** è il protocollo standard che li espone: il sistema del cliente mette a disposizione un elenco di tools tramite un server MCP, e l'agente, capita la richiesta dell'utente, sceglie in autonomia il tool giusto e lo richiama con i parametri corretti. Un'unica integrazione MCP al posto di tante custom: dati sempre aggiornati, riuso tra più agenti, scope controllato.
+  Quando un sistema non ha un server MCP nativo, si genera invece la **specifica OpenAPI**, o Swagger, dalle API REST esistenti, e la piattaforma la trasforma in un tool richiamabile, con lo stesso comportamento. In entrambi i casi il principio è lo stesso: *il tool sa cosa fare in base alla richiesta dell'utente, e gestisce da solo la chiamata API sui sistemi reali*.
 
 ## 6 · Gli strumenti dietro i progetti
 *(~40s)*
